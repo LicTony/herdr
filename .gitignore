@@ -1,3 +1,5 @@
-
 # Auto-generated skill registry cache
 .atl/
+
+# Local configuration files
+config.toml

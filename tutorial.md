@@ -126,6 +126,21 @@ scrollback_lines = 10000
 # ─── Mouse ────────────────────────────────────────────────
 [mouse]
 enabled = true
+
+# ─── Keybindings ──────────────────────────────────────────
+[keys]
+# Match tmux/Zellij-style prefix muscle memory.
+prefix = "ctrl+a"
+
+# Move between agents in the sidebar.
+# Avoid Herdr's built-in prefix+shift+j/k pane-swap bindings.
+previous_agent = "prefix+alt+k"
+next_agent = "prefix+alt+j"
+
+# Jump straight to agent N (1..9) as listed in the sidebar.
+# Use Ctrl after the prefix: Alt+number is owned by skhd/yabai spaces,
+# and Shift+number did not reach Herdr reliably in the current terminal setup.
+focus_agent = "prefix+ctrl+1..9"
 ```
 
 Verificar que el config es válido y aplicar cambios en caliente:
