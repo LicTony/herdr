@@ -316,8 +316,6 @@ La característica más práctica de HERDR es el tracking de estado de agentes. 
 
 ## 🔄 Cómo actualizar HERDR después
 
-```bash
-herdr update
-```
+Dado que tenés configurado el autostart de HERDR, actualizarlo directamente puede ser problemático porque siempre estás dentro de una sesión activa de terminal.
 
-Las instalaciones directas en Linux y macOS usan el canal `stable` por defecto.
+Para actualizar de forma segura, seguí la guía detallada en [actualizarherd.md](file:///home/siranthony/Infraestructura/herdr/actualizarherd.md) utilizando los scripts de desactivación y activación del autostart.
