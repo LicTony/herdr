@@ -2,19 +2,7 @@
 
 > Terminal multiplexer with AI agent tracking. Built for developers who run multiple AI agents concurrently.
 
-```
-┌─ herdr ──────────────────────────────────────────────────┐
-│                                          │ AGENTS         │
-│  [workspace-1]                           │                │
-│  ┌────────────────────────────────────┐  │ ● idle         │
-│  │                                    │  │                │
-│  │  $  _                              │  │                │
-│  │                                    │  │                │
-│  └────────────────────────────────────┘  │                │
-│                                          │                │
-│  [workspace-2]                           │                │
-└──────────────────────────────────────────────────────────┘
-```
+![HERDR](Captura%20de%20pantalla%20de%202026-07-17%2014-09-02.png)
 
 ## What is HERDR?
 
