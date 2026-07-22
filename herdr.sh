@@ -42,9 +42,10 @@ create_tab "pi"       "pi"
 create_tab "git"      "lazygit"
 create_tab "glow"     "glow"
 create_tab "terminal" "bash"
+create_tab "tonyscode" "tonyscode"
 
 echo "Workspace '$LABEL' creado. id=$WS_ID"
-echo "Tabs: opencode | agy | pi | git | glow | terminal"
+echo "Tabs: opencode | agy | pi | git | glow | terminal | tonyscode"
 
 # 4) Enfocar el workspace
 herdr workspace focus "$WS_ID"
