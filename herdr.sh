@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # herdr.sh — toggle workspace: si existe lo cierra, si no existe lo crea
+#
+# Version: 1.1.0
+# Last modified: 2026-07-21
 set -euo pipefail
 
 PROYECTO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
