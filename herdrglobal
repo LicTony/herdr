@@ -1,0 +1,12 @@
+# herdrglobal — global tabs loaded in every herdr workspace
+# Format: <label><TAB><command>
+# Lines starting with # are comments. Blank lines are ignored.
+# Override location with: export HERDR_GLOBAL_FILE=/path/to/file
+
+oc	opencode
+oc2	opencode2
+agy	agy
+pi	pi
+git	lazygit
+glow	glow
+tonyscode	tonyscode
