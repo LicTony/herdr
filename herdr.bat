@@ -51,6 +51,35 @@ if not defined HAS_POWERSHELL (
   if not errorlevel 1 set "HAS_POWERSHELL=1"
 )
 
+:: --- Ensure a herdr session exists and is visible in a window ---
+"%HERDR_BIN%" status server >nul 2>nul
+if errorlevel 1 (
+  echo herdr: no hay ninguna sesion de herdr corriendo, iniciando una nueva...
+  start "" "%HERDR_BIN%"
+  set "HERDR_UP="
+  for /l %%w in (1,1,20) do (
+    if not defined HERDR_UP (
+      "%HERDR_BIN%" status server >nul 2>nul
+      if not errorlevel 1 set "HERDR_UP=1"
+      if not defined HERDR_UP ping -n 1 -w 300 127.0.0.1 >nul
+    )
+  )
+  if not defined HERDR_UP (
+    1>&2 echo herdr: error: no se pudo iniciar la sesion de herdr a tiempo
+    exit /b 1
+  )
+) else (
+  set "HERDR_HAS_WINDOW="
+  if defined HAS_POWERSHELL (
+    for /f "delims=" %%W in ('powershell -NoProfile -Command "(@(Get-Process -Name herdr -ErrorAction SilentlyContinue).Where({$_.MainWindowHandle -ne 0})).Count"') do set "HERDR_WIN_COUNT=%%W"
+    if defined HERDR_WIN_COUNT if not "!HERDR_WIN_COUNT!"=="0" set "HERDR_HAS_WINDOW=1"
+  )
+  if not defined HERDR_HAS_WINDOW (
+    echo herdr: sesion corriendo sin ventana visible, abriendo una...
+    start "" "%HERDR_BIN%"
+  )
+)
+
 :: --- Find existing workspace by label (avoid pipe in for /f; use temp file) ---
 set "WS_ID="
 set "TAB_COUNT="
