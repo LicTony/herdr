@@ -32,7 +32,15 @@ set "LOCAL_TABS_FILE=!PROYECTO_DIR!\herdr.tabs"
 
 :: --- Dependencies ---
 set "HERDR_BIN="
-for /f "delims=" %%I in ('where herdr 2^>nul') do set "HERDR_BIN=%%I"
+for /f "delims=" %%I in ('where herdr 2^>nul') do (
+  if not defined HERDR_BIN (
+    echo %%I | findstr /i ".exe" >nul
+    if not errorlevel 1 set "HERDR_BIN=%%I"
+  )
+)
+if not defined HERDR_BIN (
+  for /f "delims=" %%I in ('where herdr 2^>nul') do if not defined HERDR_BIN set "HERDR_BIN=%%I"
+)
 if not defined HERDR_BIN (
   1>&2 echo herdr: error: herdr no encontrado en PATH
   1>&2 echo herdr: tip: instala herdr y asegurate que este en PATH
@@ -50,18 +58,28 @@ if not defined HAS_POWERSHELL (
   where pwsh >nul 2>nul
   if not errorlevel 1 set "HAS_POWERSHELL=1"
 )
+set "HAS_WT="
+where wt >nul 2>nul
+if not errorlevel 1 set "HAS_WT=1"
 
 :: --- Ensure a herdr session exists and is visible in a window ---
-"%HERDR_BIN%" status server >nul 2>nul
-if errorlevel 1 (
+"%HERDR_BIN%" status server > "%TEMP%\herdr_status_tmp.json" 2>&1
+findstr /i /c:"not running" "%TEMP%\herdr_status_tmp.json" >nul
+if not errorlevel 1 (
   echo herdr: no hay ninguna sesion de herdr corriendo, iniciando una nueva...
-  start "" "%HERDR_BIN%"
+  if defined HAS_WT (
+    start "" wt.exe new-tab --startingDirectory "!PROYECTO_DIR!" pwsh.exe -NoLogo -Command "& '!HERDR_BIN!'"
+  ) else (
+    start "" "%HERDR_BIN%"
+  )
   set "HERDR_UP="
-  for /l %%w in (1,1,20) do (
+  for /l %%w in (1,1,40) do (
     if not defined HERDR_UP (
-      "%HERDR_BIN%" status server >nul 2>nul
-      if not errorlevel 1 set "HERDR_UP=1"
-      if not defined HERDR_UP ping -n 1 -w 300 127.0.0.1 >nul
+      "%HERDR_BIN%" status server > "%TEMP%\herdr_status_tmp.json" 2>&1
+      findstr /i /c:"not running" "%TEMP%\herdr_status_tmp.json" >nul
+      set "FINDSTR_EC=!errorlevel!"
+      if !FINDSTR_EC! equ 1 set "HERDR_UP=1"
+      if not defined HERDR_UP ping -n 1 -w 500 127.0.0.1 >nul
     )
   )
   if not defined HERDR_UP (
@@ -76,7 +94,21 @@ if errorlevel 1 (
   )
   if not defined HERDR_HAS_WINDOW (
     echo herdr: sesion corriendo sin ventana visible, abriendo una...
-    start "" "%HERDR_BIN%"
+    if defined HAS_WT (
+      start "" wt.exe new-tab --startingDirectory "!PROYECTO_DIR!" pwsh.exe -NoLogo -Command "& '!HERDR_BIN!'"
+    ) else (
+      start "" "%HERDR_BIN%"
+    )
+    set "HERDR_UP="
+    for /l %%w in (1,1,40) do (
+      if not defined HERDR_UP (
+        "%HERDR_BIN%" status server > "%TEMP%\herdr_status_tmp.json" 2>&1
+        findstr /i /c:"not running" "%TEMP%\herdr_status_tmp.json" >nul
+        set "FINDSTR_EC=!errorlevel!"
+        if !FINDSTR_EC! equ 1 set "HERDR_UP=1"
+        if not defined HERDR_UP ping -n 1 -w 500 127.0.0.1 >nul
+      )
+    )
   )
 )
 
@@ -125,7 +157,7 @@ if defined WS_ID (
     exit /b 1
   )
   "%HERDR_BIN%" tab rename "!TAB_ROOT!" "terminal" >nul
-  "%HERDR_BIN%" pane run "!PANE_AGENTE!" "cmd.exe" >nul
+  "%HERDR_BIN%" pane run "!PANE_AGENTE!" "pwsh.exe -NoLogo" >nul
   if exist "!TAB_LIST_TMP!" del /f /q "!TAB_LIST_TMP!" >nul 2>nul
   if exist "!PANE_LIST_TMP!" del /f /q "!PANE_LIST_TMP!" >nul 2>nul
 ) else (
@@ -144,7 +176,7 @@ if defined WS_ID (
     exit /b 1
   )
   if defined TAB_ROOT "%HERDR_BIN%" tab rename "!TAB_ROOT!" "terminal" >nul
-  if defined PANE_AGENTE "%HERDR_BIN%" pane run "!PANE_AGENTE!" "cmd.exe" >nul
+  if defined PANE_AGENTE "%HERDR_BIN%" pane run "!PANE_AGENTE!" "pwsh.exe -NoLogo" >nul
   if exist "!WS_JSON_TMP!" del /f /q "!WS_JSON_TMP!" >nul 2>nul
 )
 if exist "!WS_LIST_TMP!" del /f /q "!WS_LIST_TMP!" >nul 2>nul
@@ -180,7 +212,7 @@ if defined HAS_POWERSHELL goto :LOAD_TABS_PS
 goto :LOAD_TABS_BATCH
 
 :LOAD_TABS_PS
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='SilentlyContinue'; $f='%TSV_FILE%'; $ws=$env:WS_ID; $n=0; Get-Content -LiteralPath $f -Encoding utf8 | ForEach-Object { $n++; $line=$_; $trimmed=$line.Trim(); if($trimmed -eq '' -or $trimmed -match '^#'){ return }; if($line -notmatch \"`t\"){ Write-Host \"herdr: warning: ${f}:${n}: linea malformada (sin TAB), se ignora: '$line'\"; return }; $parts=$line.Split(\"`t\",2); $label=$parts[0]; $cmd=$parts[1]; if([string]::IsNullOrWhiteSpace($label) -or [string]::IsNullOrWhiteSpace($cmd)){ Write-Host \"herdr: warning: ${f}:${n}: linea malformada (sin TAB), se ignora: '$line'\"; return }; try { $j = herdr tab create --workspace $ws --label $label --no-focus 2>&1 | Out-String; $obj = $j | ConvertFrom-Json; $pane=$obj.result.root_pane.pane_id; if($pane){ herdr pane run $pane $cmd | Out-Null } } catch { Write-Host \"herdr: warning: fallo al crear tab '$label': $_\" } }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='SilentlyContinue'; $f='%TSV_FILE%'; $ws=$env:WS_ID; $n=0; Get-Content -LiteralPath $f -Encoding utf8 | ForEach-Object { $n++; $line=$_; $trimmed=$line.Trim(); if($trimmed -eq '' -or $trimmed -match '^#'){ return }; if($line -notmatch \"`t\"){ Write-Host \"herdr: warning: ${f}:${n}: linea malformada (sin TAB), se ignora: '$line'\"; return }; $parts=$line.Split(\"`t\",2); $label=$parts[0]; $cmd=$parts[1]; if([string]::IsNullOrWhiteSpace($label) -or [string]::IsNullOrWhiteSpace($cmd)){ Write-Host \"herdr: warning: ${f}:${n}: linea malformada (sin TAB), se ignora: '$line'\"; return }; try { $j = & $env:HERDR_BIN tab create --workspace $ws --label $label --no-focus 2>&1 | Out-String; $obj = $j | ConvertFrom-Json; $pane=$obj.result.root_pane.pane_id; if($pane){ & $env:HERDR_BIN pane run $pane $cmd | Out-Null } } catch { Write-Host \"herdr: warning: fallo al crear tab '$label': $_\" } }"
 exit /b 0
 
 :LOAD_TABS_BATCH
